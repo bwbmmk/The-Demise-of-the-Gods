@@ -1,0 +1,62 @@
+[
+  {
+    "id": "journal",
+    "title": "抄名人之歌",
+    "source": "mia-harpsichord.wav",
+    "sourceSha256": "80922c94b1713a4333be34176f475f8782933ca86c6cc85688d816ebbd184fcb",
+    "sourceSeconds": 77.1714,
+    "seconds": 34.2857,
+    "file": "journal.wav",
+    "sampleRate": 22050,
+    "channels": 1,
+    "peak": 0.554901123046875
+  },
+  {
+    "id": "transition",
+    "title": "章末低鸣",
+    "source": "sting-transition.wav",
+    "sourceSha256": "bde015b3641501a20bb399c2f889dd869da7fc1adbf0a0f8bbdaf0c2930122c8",
+    "sourceSeconds": 9.0,
+    "seconds": 3.4,
+    "file": "transition.wav",
+    "sampleRate": 22050,
+    "channels": 1,
+    "peak": 0.387939453125
+  },
+  {
+    "id": "resonance",
+    "title": "有人在念你的名字",
+    "source": "sting-resonance.wav",
+    "sourceSha256": "f9e15f60d87af4a57b6d20ac6c4a8422ee660aa15fcec2f6c25af93c8afb4593",
+    "sourceSeconds": 12.5,
+    "seconds": 6.4,
+    "file": "resonance.wav",
+    "sampleRate": 22050,
+    "channels": 1,
+    "peak": 0.492034912109375
+  },
+  {
+    "id": "defeat",
+    "title": "余火散入灰烬",
+    "source": "sting-defeat.wav",
+    "sourceSha256": "566e15525f93aca6a8f389ba071a4078bd60b06d798d5d270838ce27d3599bdd",
+    "sourceSeconds": 24.2,
+    "seconds": 6.0,
+    "file": "defeat.wav",
+    "sampleRate": 22050,
+    "channels": 1,
+    "peak": 0.500274658203125
+  },
+  {
+    "id": "victory",
+    "title": "一粒火种归入掌心",
+    "source": "sting-victory.wav",
+    "sourceSha256": "cfd5f8e22d4d683533f9589160d69c009c0d2ed95199aa6bd0dcab4cc39f81b2",
+    "sourceSeconds": 22.8571,
+    "seconds": 8.0,
+    "file": "victory.wav",
+    "sampleRate": 22050,
+    "channels": 1,
+    "peak": 0.552459716796875
+  }
+]

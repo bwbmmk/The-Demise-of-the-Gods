@@ -1,0 +1,37 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>smoke</title></head><body>
+<canvas id="c" width="320" height="180"></canvas>
+<pre id="out">pending</pre>
+<script type="module">
+const log = [];
+try {
+  const t0 = performance.now();
+  const { Renderer } = await import('../../src/renderer.js');
+  log.push('renderer import ' + (performance.now() - t0).toFixed(0) + 'ms');
+  const t1 = performance.now();
+  const { Runner } = await import('../../src/physics.js');
+  const { DISTRICT } = await import('../../src/level-district.js');
+  log.push('level import ' + (performance.now() - t1).toFixed(0) + 'ms');
+  const t2 = performance.now();
+  const { install } = await import('../src/index.js');
+  log.push('kit import ' + (performance.now() - t2).toFixed(0) + 'ms');
+
+  const t3 = performance.now();
+  const r = new Renderer(document.getElementById('c'));
+  const g = new Runner(DISTRICT);
+  const kit = install(r, { post: false });
+  log.push('construct ' + (performance.now() - t3).toFixed(0) + 'ms');
+
+  const t4 = performance.now();
+  for (let i = 0; i < 3; i++) r.render(1 / 60, g, 'running', 1, null);
+  log.push('3 renders ' + (performance.now() - t4).toFixed(0) + 'ms');
+  log.push('kit version ' + kit.version);
+  log.push('OK');
+} catch (e) {
+  log.push('ERR ' + (e && e.message));
+  log.push('STACK ' + String(e && e.stack).split('\n').slice(0, 3).join(' | '));
+}
+document.getElementById('out').textContent = log.join('\n');
+document.body.dataset.smoke = '1';
+</script>
+</body></html>

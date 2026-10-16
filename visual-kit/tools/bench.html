@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>visual-kit benchmark</title>
+<style>
+  html,body{margin:0;background:#0b1418;color:#d9e6e0;font:13px ui-monospace,monospace}
+  #game{width:1280px;height:720px;display:block}
+  #out{padding:8px;white-space:pre-wrap}
+</style>
+</head>
+<body>
+<canvas id="game" width="640" height="360"></canvas>
+<pre id="out">running…</pre>
+<script type="module">
+import { Renderer } from '../../src/renderer.js';
+import { Runner } from '../../src/physics.js';
+import { DISTRICT } from '../../src/level-district.js';
+import { install } from '../src/index.js';
+import { ParticlePool } from '../src/vfx.js';
+
+const N = 60;               // 每种配置测多少帧（软件光栅化下每帧很贵，不宜多）
+const WARMUP = 12;
+const STRESS = true;        // 每帧都放粒子，制造负载
+
+/** 把角色推到记名桥 Boss 战附近：此时守灯人、三位 NPC、军官、弹道全在场，是最重的场景。 */
+function makeGame() {
+  const game = new Runner(DISTRICT);
+  game.x = 40900;
+  game.y = game.groundAt(game.x);
+  game.prevX = game.x - 1;
+  game.prevY = game.y;
+  game.chapter = DISTRICT.chapters.reduce((i, c, j) => (game.x >= c.at ? j : i), 0);
+  game.boss && (game.boss.phase = 'volley');
+  return game;
+}
+
+/** 测一组帧，返回耗时统计。 */
+function measure(renderer, game) {
+  const times = [];
+  for (let i = 0; i < N + WARMUP; i++) {
+    const t0 = performance.now();
+    renderer.sample(game);
+    renderer.render(1 / 60, game, 'running', 1, null);
+    const t1 = performance.now();
+    if (i >= WARMUP) times.push(t1 - t0);
+    // 持续制造负载，让粒子/特效路径真的被走到
+    if (STRESS && i % 2 === 0) {
+      renderer.burst(game.x - 20, game.y - 40, 14, '#e8c988', 1.4);
+    }
+    if (i % 37 === 0) renderer.event({ type: 'land' }, game);
+    if (i % 53 === 0) renderer.event({ type: 'collect', x: game.x, y: game.y - 40 }, game);
+    game.elapsed += 1 / 60;
+  }
+  times.sort((a, b) => a - b);
+  const avg = times.reduce((s, v) => s + v, 0) / times.length;
+  const p = (q) => times[Math.min(times.length - 1, Math.floor(times.length * q))];
+  return {
+    avg: +avg.toFixed(3),
+    p50: +p(0.5).toFixed(3),
+    p95: +p(0.95).toFixed(3),
+    max: +times[times.length - 1].toFixed(3),
+    fps: +(1000 / avg).toFixed(1),
+    frames: N,
+  };
+}
+
+/**
+ * 粒子系统微基准（与环境无关，可信）。
+ *
+ * 为什么需要它：上面那组"整帧耗时"在 headless 里会被光栅化方式污染
+ * ——`--dump-dom` 模式下画布根本没被真正合成，原版的 p50 能低到 0.4ms，
+ * 而 kit 的后处理因为要回读像素，时间全花在软件光栅化上。
+ * 那个对比说明不了真实性能。
+ *
+ * 但"每帧分配多少对象、要遍历几遍数组"是**纯 JS 行为**，跟光栅化无关。
+ * 这正是池化要解决的问题，所以这一组才是能拿来说话的数字。
+ *
+ * 公平性：两条路径用**同一个粒子上限**（都维持约 CAP 个），
+ * 否则会拿"220 个粒子"和"900 个粒子"相比，得出反向的结论。
+ */
+function microBenchParticles(CAP = 900, FRAMES = 600, PER_FRAME = 40) {
+  // --- 旧路径：对象数组 + 每帧 filter 重建 ---
+  let legacyObjects = 0, legacyArrays = 0;
+  const t0 = performance.now();
+  let old = [];
+  for (let f = 0; f < FRAMES; f++) {
+    for (let i = 0; i < PER_FRAME; i++) {
+      old.push({ x: f % 100, y: f % 50, vx: Math.random() * 60 - 30, vy: Math.random() * 60 - 30,
+        life: 0.5 + Math.random() * 0.5, max: 1, color: '#e8c988', size: 1 + Math.random() * 2 });
+      legacyObjects++;
+    }
+    if (old.length > CAP) old.splice(0, old.length - CAP);
+    for (const p of old) { p.life -= 1 / 60; p.x += p.vx / 60; p.y += p.vy / 60; p.vy += 160 / 60; }
+    old = old.filter((p) => p.life > 0);   // ← 每帧新建一个数组
+    legacyArrays++;
+  }
+  const legacyMs = performance.now() - t0;
+
+  // --- 新路径：结构体数组 + 就地压缩（零分配）---
+  const pool = new ParticlePool(CAP);
+  const t1 = performance.now();
+  for (let f = 0; f < FRAMES; f++) {
+    pool.burst('#e8c988', f % 100, f % 50, PER_FRAME, 60, 1, 0.8, 2);
+    pool.update(1 / 60);
+  }
+  const pooledMs = performance.now() - t1;
+
+  return {
+    frames: FRAMES, perFrame: PER_FRAME, cap: CAP,
+    legacyMs: +legacyMs.toFixed(2),
+    pooledMs: +pooledMs.toFixed(2),
+    speedup: +(legacyMs / Math.max(pooledMs, 0.01)).toFixed(2),
+    legacyLive: old.length,
+    pooledLive: pool.n,
+    legacyObjects,                       // 累计分配的对象数
+    legacyArrays,                        // 累计重建的数组数
+    pooledAllocations: 0,                // 池化路径：运行期零分配
+  };
+}
+
+const canvas = document.getElementById('game');
+const out = document.getElementById('out');
+const report = {};
+
+try {
+  // ---- 先跑粒子系统微基准：纯 JS，不受光栅化影响 ----
+  report.micro = microBenchParticles();
+
+  // ---- 基准：原版 ----
+  const r1 = new Renderer(canvas);
+  report.vanilla = measure(r1, makeGame());
+
+  // ---- 接入 visual-kit（同一个 renderer 实例，就地接管）----
+  const kit = install(r1, { showStats: false });
+
+  // A) 满配：角色 + 粒子 + 后处理，全开。这是"最好看"的一档。
+  kit.perf.quality.locked = true;
+  kit.perf.quality.level = 3;
+  report.kit = measure(r1, makeGame());
+
+  // B) 关掉后处理：只剩骨骼角色与池化粒子。
+  //    和 A 的差值 = 后处理的开销；和 vanilla 的差值 = kit 本身的净成本。
+  kit.post.setEnabled(false);
+  report.kitNoPost = measure(r1, makeGame());
+  kit.post.setEnabled(true);
+
+  report.particlesLeft = r1.particles.length;   // 原数组应始终为空
+  report.poolActive = kit.vfx.particles.n;
+  report.kitVersion = kit.version;
+
+  // C) 自适应：解锁画质调度，看它能否把帧时间拉回目标。
+  kit.perf.quality.locked = false;
+  kit.perf.quality.level = 3;
+  report.adaptiveLevelStart = kit.perf.budgets.level;
+  report.adaptive = measure(r1, makeGame());
+  report.adaptiveLevelEnd = kit.perf.budgets.level;
+
+  report.ok = true;
+} catch (e) {
+  report.ok = false;
+  report.error = String(e && e.stack || e);
+}
+
+// 标记串必须拆开写：`--dump-dom` 会把这段源码原样吐出来，
+// 若源码里存在完整标记，正则会先在源码里命中，拿到半截 JS。
+const A = '@@BEN' + 'CH@@';
+const B = '@@END' + 'BENCH@@';
+out.textContent = A + JSON.stringify(report) + B;
+</script>
+</body>
+</html>

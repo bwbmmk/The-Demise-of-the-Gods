@@ -1,0 +1,324 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>《神之殇》视觉增强包 · visual-kit</title>
+<style>
+  :root{
+    --bg:#0a1218; --panel:#101c23; --line:#1e2f38; --ink:#d6e4e0;
+    --dim:#7e938f; --gold:#c7a978; --ember:#8d403a;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);
+    font:13px/1.5 system-ui,"Segoe UI",-apple-system,"Microsoft YaHei",sans-serif}
+  #stage{position:fixed;inset:0;display:flex;flex-direction:column}
+  #game{flex:1;width:100%;display:block;background:#0d1a20}
+  #hud{position:fixed;top:12px;left:12px;padding:10px 12px;border-radius:8px;
+    background:rgba(8,16,20,.72);border:1px solid var(--line);min-width:196px;
+    font:11px/1.7 ui-monospace,Consolas,monospace;pointer-events:none}
+  #hud b{color:var(--gold);font-weight:600}
+  #hud .story{color:#8fd0d8}
+  #hud .row{display:flex;justify-content:space-between;gap:14px}
+  #bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:10px 14px;
+    background:var(--panel);border-top:1px solid var(--line)}
+  .grp{display:flex;gap:6px;align-items:center;padding-right:12px;margin-right:4px;
+    border-right:1px solid var(--line)}
+  .grp:last-child{border-right:0}
+  button{font:inherit;font-size:12px;color:var(--ink);background:#16262e;
+    border:1px solid var(--line);border-radius:6px;padding:5px 10px;cursor:pointer;transition:.12s}
+  button:hover{background:#1d313b;border-color:#2c4652}
+  button[aria-pressed="true"]{background:var(--gold);border-color:var(--gold);color:#1a1207;font-weight:600}
+  button.story[aria-pressed="true"]{background:#3d6b74;border-color:#3d6b74;color:#eaf6f7}
+  .tag{color:var(--dim);font-size:10px;letter-spacing:.08em}
+  button.warn[aria-pressed="true"]{background:var(--ember);border-color:var(--ember);color:#ffefe9}
+  label{color:var(--dim);font-size:11px;display:flex;align-items:center;gap:6px}
+  input[type=range]{width:104px;accent-color:var(--gold)}
+  @media (max-width:760px){#hud{display:none}}
+</style>
+</head>
+<body>
+<div id="stage">
+  <canvas id="game"></canvas>
+  <div id="bar">
+    <div class="grp">
+      <button id="t-kit" aria-pressed="true">增强版</button>
+      <button id="t-vanilla" aria-pressed="false">原版对照</button>
+    </div>
+    <div class="grp">
+      <button id="f-vfx" aria-pressed="true">粒子</button>
+      <button id="f-story" class="story" aria-pressed="true">剧情氛围</button>
+      <button id="f-post" aria-pressed="true">后处理</button>
+      <button id="f-lines" aria-pressed="true">速度线</button>
+    </div>
+    <div class="grp">
+      <span class="tag">剧情事件</span>
+      <button id="e-collect" class="story">记名</button>
+      <button id="e-bell" class="story">钟波</button>
+      <button id="e-resonance" class="story">共鸣</button>
+      <button id="e-lantern" class="story">送灯</button>
+    </div>
+    <div class="grp">
+      <label>速度 <input id="s-speed" type="range" min="220" max="520" value="350"></label>
+      <label>七夜寒调 <input id="s-cold" type="range" min="0" max="100" value="0"></label>
+    </div>
+    <div class="grp">
+      <button id="a-jump">跳跃</button>
+      <button id="a-slide">滑铲</button>
+      <button id="a-pause" aria-pressed="false">暂停</button>
+      <button id="a-freeze" aria-pressed="false">慢动作</button>
+    </div>
+  </div>
+</div>
+<div id="hud">
+  <div class="row"><span>FPS</span><b id="h-fps">–</b></div>
+  <div class="row"><span>帧耗时</span><b id="h-ms">–</b></div>
+  <div class="row"><span>p95</span><b id="h-p95">–</b></div>
+  <div class="row"><span>画质档</span><b id="h-q">–</b></div>
+  <div class="row"><span>粒子</span><b id="h-p">–</b></div>
+  <div class="row story"><span>记忆痕 / 灰烬</span><b id="h-mote">–</b></div>
+  <div class="row story"><span>光环 / 灯 / 字痕</span><b id="h-story">–</b></div>
+  <div class="row"><span>模式</span><b id="h-mode">增强版</b></div>
+</div>
+
+<script type="module">
+// 出错要看得见：把未捕获错误写到页面上，而不是只留在控制台里。
+window.addEventListener('error', (e) => {
+  const msg = (e && (e.message || (e.error && e.error.message))) || '未知错误';
+  document.body.dataset.jsError = msg + (e && e.lineno ? ' @ 第 ' + e.lineno + ' 行' : '');
+  const box = document.createElement('pre');
+  box.style.cssText = 'position:fixed;left:12px;bottom:70px;z-index:99;padding:10px 12px;'
+    + 'border-radius:8px;background:#2a1417;border:1px solid #6b3038;color:#ffd9d9;'
+    + 'font:12px/1.5 ui-monospace,monospace;white-space:pre-wrap';
+  box.textContent = '脚本出错：' + msg;
+  document.body.appendChild(box);
+});
+
+import { Renderer } from '../src/renderer.js';
+import { Runner } from '../src/physics.js';
+import { DISTRICT } from '../src/level-district.js';
+import { LANTERN } from '../src/level-lantern.js';
+import { COVENANT } from '../src/level-covenant.js';
+import { FATE } from '../src/level-fate.js';
+import { install } from './src/index.js';
+import { jumpReach } from '../src/level.js';
+
+// ?at=<x> 指定起始位置；
+// ?layers=<scene,vfx,story,post,lines> 指定开哪些子系统（0 = 关）。
+// ?level=<id> 切关卡（district / lantern / covenant / fate）。
+//
+// 第一个开关是**背景加层**，必须能单独关：对照图要回答的是
+// "背景到底加了什么"，那就得把粒子/后处理/氛围全关掉只留它。
+const q = new URLSearchParams(location.search);
+const START_X = Number(q.get('at') || 0) || 0;
+const LAYERS = q.get('layers');
+
+// 注意命名：`src/level.js` 里已经有一个顶层的 `LEVELS`（关卡注册表）。
+// 打包成单文件时所有模块共享同一作用域，这里再叫 LEVELS 会直接
+// 让整份脚本 `Identifier 'LEVELS' has already been declared` 报错。
+// 演示页自己的这张名字表加 `DEMO_` 前缀让路。
+const DEMO_LEVELS = { district: DISTRICT, lantern: LANTERN, covenant: COVENANT, fate: FATE };
+const LEVEL_ID = q.get('level') || 'district';
+
+const canvas = document.getElementById('game');
+const renderer = new Renderer(canvas);
+const kit = install(renderer, { showStats: false });
+
+// ---------- 场景 ----------
+// 用真实关卡的真实物理：演示页里看到的就是游戏里会发生的。
+const level = DEMO_LEVELS[LEVEL_ID] || DISTRICT;
+let game = new Runner(level);
+game.x = START_X || 2500;
+game.y = game.groundAt(game.x);
+game.prevX = game.x; game.prevY = game.y;
+game.chapter = level.chapters.reduce((i, c, j) => (game.x >= c.at ? j : i), 0);
+
+const state = {
+  speed: 350,
+  paused: false,
+  freeze: false,
+  cold: 0,
+  autoJumpAt: null,
+  hurtPulse: 0,
+};
+
+/** 把章节速度改成滑块速度，让"跑得快/慢"直接可见。 */
+function applySpeed() {
+  for (const c of level.chapters) c.speed = state.speed;
+}
+
+function reset(toX = 2500) {
+  game = new Runner(level);
+  game.x = toX; game.y = game.groundAt(game.x);
+  game.prevX = game.x; game.prevY = game.y;
+  game.chapter = level.chapters.reduce((i, c, j) => (game.x >= c.at ? j : i), 0);
+}
+
+// ---------- 自动驾驶：像玩家一样看着障碍提前跳 ----------
+const handled = new Set();
+function autopilot(dt) {
+  if (game.state !== 'running') { reset(START_X || 2500); handled.clear(); return; }
+  const next = level.obstacles.find((o) => !handled.has(o.id) && o.x > game.x - 80);
+  if (next) {
+    const lead = next.type === 'beam' ? 52 : next.type === 'gap' ? 34 : 104;
+    if (game.x >= next.x - lead) {
+      handled.add(next.id);
+      if (next.type === 'beam') game.slide();
+      else {
+        game.jump();
+        if (next.type === 'gap' && next.width > jumpReach(state.speed) - 12) state.autoJumpAt = game.elapsed + 0.36;
+      }
+    }
+  }
+  if (state.autoJumpAt !== null && game.elapsed >= state.autoJumpAt) { game.jump(); state.autoJumpAt = null; }
+  // 躲守灯人的灰弹
+  if (game.grounded && game.projectiles.some((p) => p.x > game.x && p.x - game.x < (state.speed + p.speed) * 0.19)) game.jump();
+  if (game.grounded && (game.bossShots || []).some((s) => s.x > game.x && s.x - game.x < 150)) game.jump();
+}
+
+// ---------- 主循环（固定 120Hz 物理 + 插值渲染，与游戏一致） ----------
+// 截图钩子。
+//
+// 为什么在截图模式下**不用 requestAnimationFrame 循环**：
+// headless 的 `--virtual-time-budget` 需要任务队列排空才会推进虚拟时间，
+// 而一个永不停止的 rAF 循环会一直占着队列，Chrome 于是挂到真实超时都拿不到 DOM。
+// 所以这里改成同步跑固定帧数，跑完立刻导出画布 —— 确定性更好，也快得多。
+const SHOT = new URLSearchParams(location.search).has('shot');
+const SHOT_FRAMES = 30;
+const step = 1 / 120;
+let acc = 0;
+
+/** 推进并渲染一帧。dt 单位秒。 */
+function tick(dt) {
+  const scale = state.freeze ? 0.15 : (state.paused ? 0 : 1);
+  if (scale > 0) {
+    acc += dt * scale;
+    let guard = 0;
+    while (acc >= step && guard++ < 40) {
+      autopilot(step);
+      game.update(step);
+      processEvents();
+      renderer.sample(game);
+      acc -= step;
+    }
+  }
+  renderer.render(dt, game, 'running', acc / step, null);
+  updateHud();
+}
+
+let last = performance.now();
+function frame(now) {
+  const dt = Math.min(0.08, (now - last) / 1000);
+  last = now;
+  tick(dt);
+  requestAnimationFrame(frame);
+}
+
+const evLog = [];
+function processEvents() {
+  for (const e of game.drainEvents()) evLog.push(e);
+  // 受击脉冲：告诉骨骼层播放受击姿态
+  if (evLog.some((e) => e.type === 'hit')) { state.hurtPulse = 0.5; }
+  evLog.length = 0;
+  state.hurtPulse = Math.max(0, state.hurtPulse - step);
+  game._hurtPulse = state.hurtPulse;
+}
+
+// ---------- HUD ----------
+const el = (id) => document.getElementById(id);
+function updateHud() {
+  const s = kit.perf.stats;
+  el('h-fps').textContent = s.fps.toFixed(1);
+  el('h-ms').textContent = s.avg.toFixed(2) + ' ms';
+  el('h-p95').textContent = s.percentile(0.95).toFixed(2) + ' ms';
+  el('h-q').textContent = 'L' + kit.perf.budgets.level;
+  el('h-p').textContent = kit.vfx.particles.n + ' / ' + kit.vfx.particles.budget;
+  const m = kit.story.motes;
+  let mem = 0, ash = 0;
+  for (let i = 0; i < m.n; i++) { if (m.kind[i] === 0) mem++; else if (m.kind[i] === 1) ash++; }
+  el('h-mote').textContent = mem + ' / ' + ash;
+  el('h-story').textContent = kit.story.rings.list.length + ' / '
+    + kit.story.lanterns.list.length + ' / ' + kit.story.glyphs.list.length;
+}
+
+// ---------- 控件 ----------
+function press(id, on) { el(id).setAttribute('aria-pressed', String(on)); }
+
+el('t-kit').onclick = () => { kit.setEnabled(true); press('t-kit', true); press('t-vanilla', false); el('h-mode').textContent = '增强版'; };
+el('t-vanilla').onclick = () => { kit.setEnabled(false); press('t-vanilla', true); press('t-kit', false); el('h-mode').textContent = '原版对照'; };
+
+// 角色绘制完全沿用原项目：kit 不再触碰 hero()，这里也没有任何相关开关。
+const feat = { scene: true, vfx: true, story: true, post: true, lines: true };
+function applyFeat() {
+  kit.opts.scene = feat.scene;
+  kit.opts.particles = feat.vfx;
+  kit.opts.story = feat.story;
+  kit.opts.post = feat.post;
+  kit.opts.speedLines = feat.lines;
+  kit.post.setEnabled(feat.post);
+  if (!feat.vfx) kit.vfx.clear();
+  if (!feat.story) kit.story.clear();
+  if (!feat.scene) kit.scene.clear();
+  press('f-vfx', feat.vfx); press('f-story', feat.story);
+  press('f-post', feat.post); press('f-lines', feat.lines);
+}
+for (const [id, key] of [['f-vfx', 'vfx'], ['f-story', 'story'], ['f-post', 'post'], ['f-lines', 'lines']]) {
+  el(id).onclick = () => { feat[key] = !feat[key]; applyFeat(); };
+}
+if (LAYERS) {
+  const [s0, a, b, c2, d2] = LAYERS.split(',').map((v) => v !== '0');
+  feat.scene = s0 !== false; feat.vfx = !!a; feat.story = !!b; feat.post = !!c2; feat.lines = !!d2;
+}
+applyFeat();
+
+// 剧情事件按钮：走游戏自己的事件入口，验证"旁听"这条链路确实通
+const fire = (type, extra = {}) => renderer.event({ type, x: game.x + 30, y: game.y - 40, ...extra }, game);
+el('e-collect').onclick = () => fire('collect');
+el('e-bell').onclick = () => fire('boss-broken');
+el('e-resonance').onclick = () => fire('resonance');
+el('e-lantern').onclick = () => { fire('checkpoint'); kit.story._lanternReady = true; kit.story._lanternCooldown = 0; };
+
+el('s-speed').oninput = (e) => { state.speed = +e.target.value; applySpeed(); };
+el('s-cold').oninput = (e) => { state.cold = +e.target.value / 100; };
+el('a-jump').onclick = () => game.jump();
+el('a-slide').onclick = () => game.slide();
+el('a-pause').onclick = () => { state.paused = !state.paused; press('a-pause', state.paused); };
+el('a-freeze').onclick = () => { state.freeze = !state.freeze; press('a-freeze', state.freeze); };
+
+addEventListener('keydown', (e) => {
+  if (e.code === 'Space') { e.preventDefault(); game.jump(); }
+  if (e.code === 'ArrowDown') { e.preventDefault(); game.slide(); }
+  if (e.code === 'KeyP') el('a-pause').click();
+  if (e.code === 'Digit1') el('e-collect').click();
+  if (e.code === 'Digit2') el('e-bell').click();
+  if (e.code === 'Digit3') el('e-resonance').click();
+  if (e.code === 'Digit4') el('e-lantern').click();
+});
+
+addEventListener('resize', () => renderer.resize());
+applySpeed();
+
+if (SHOT) {
+  // 同步跑固定帧数，跑完导出画布，然后不再启动 rAF 循环
+  for (let i = 0; i < SHOT_FRAMES; i++) tick(1 / 60);
+  try { document.body.dataset.shot = renderer.canvas.toDataURL('image/png'); } catch (_) {}
+  // 主角在画布上的位置：外部据此裁一张特写，用来人眼复核骨骼与动作
+  document.body.dataset.shotMeta = JSON.stringify({
+    scale: renderer.scale,
+    heroX: renderer.heroX,
+    playerY: game.y,
+    dpr: renderer.dpr,
+    canvasW: renderer.canvas.width,
+    canvasH: renderer.canvas.height,
+  });
+  document.body.dataset.shotReady = '1';
+} else {
+  requestAnimationFrame(frame);
+}
+
+// 暴露给自动化检查
+window.__demo = { kit, renderer, game: () => game, state, reset, tick };
+document.body.dataset.demoReady = '1';
+</script>
+</body>
+</html>

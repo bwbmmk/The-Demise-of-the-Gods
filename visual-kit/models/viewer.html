@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>烬 · 角色 3D 模型 · 神之殇</title>
+<script type="module" src="https://unpkg.com/@google/model-viewer@3.5.0/dist/model-viewer.min.js"></script>
+<style>
+  html,body{margin:0;height:100%;background:radial-gradient(circle at 50% 30%,#16242c,#080f14 70%);
+    color:#d6e4e0;font:13px/1.6 system-ui,"Microsoft YaHei",sans-serif}
+  #wrap{display:flex;flex-direction:column;height:100%}
+  header{padding:14px 18px;border-bottom:1px solid #1e2f38}
+  header b{color:#c7a978;font-size:15px}
+  header span{color:#7e938f;margin-left:10px;font-size:12px}
+  model-viewer{flex:1;width:100%;--poster-color:transparent;
+    --progress-bar-color:#c7a978;--progress-mask:#101c23;}
+  footer{padding:10px 18px;border-top:1px solid #1e2f38;color:#7e938f;font-size:12px}
+  code{color:#c7a978}
+</style>
+</head>
+<body>
+<div id="wrap">
+  <header>
+    <b>烬 · 高模源</b>
+    <span>由 T-pose 三视图参考生成 · 含 PBR 材质 · GLB</span>
+  </header>
+  <!-- 相对路径引用同目录的 GLB，保证与模型同源 -->
+  <model-viewer src="./jin-hero.glb"
+                alt="神之殇 主角 烬 的 3D 模型"
+                camera-controls auto-rotate
+                shadow-intensity="0.7"
+                exposure="1.05"
+                environment-image="neutral"
+                touch-action="pan-y"
+                camera-orbit="18deg 78deg 2.6m">
+    <div slot="progress-bar"></div>
+  </model-viewer>
+  <footer>
+    这是<b>建模源文件</b>，不参与 2D 游戏运行——游戏内的角色是 <code>visual-kit/src/rig.js</code> 的骨骼绑定实时解算的。
+    此模型可用于：周边渲染、宣传图、未来的 3D 版本，或作为重绘贴图的参考。
+  </footer>
+</div>
+</body>
+</html>

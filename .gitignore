@@ -1,0 +1,24 @@
+# 校验与截图流水线的中间产物。校验页由 tools/verify-chapter.mjs 生成，
+# 只在本地复现用，不入库；截图本身在 docs/screenshots/。
+.verify/
+
+# 本地版本快照与旧文件备份。历史版本由 git 提交记录回溯，无需入库。
+.recovery/
+.backup-0.3.1/
+
+# 开发过程对话记录，仅本地留存。
+docs/project-chat-history.md
+
+# 构建 / 渲染日志
+*.log
+music/tools/render.log
+
+# Node
+node_modules/
+npm-debug.log*
+
+# 编辑器与系统杂项
+.DS_Store
+Thumbs.db
+*.swp
+*.tmp

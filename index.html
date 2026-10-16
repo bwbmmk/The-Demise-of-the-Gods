@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0b1013">
+  <meta name="description" content="神之殇：一款发生在众神死后世界中的横版 2D 跑酷游戏。跳跃、二段跳、滑铲，携最后一缕火种穿过神骸。">
+  <title>神之殇 · REQUIEM OF GODS</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="masthead">
+    <a class="wordmark" href="#" id="home-link" aria-label="神之殇首页"><span class="sigil" aria-hidden="true">✧</span><span>神之殇<small>REQUIEM OF GODS</small></span></a>
+    <div class="edition"><span class="status-dot"></span> 《万家微火》 <span class="edition-line"></span> BUILD 0.15.1</div>
+    <nav aria-label="游戏导航"><button id="lore-open" class="text-button">世界档案 <span>↗</span></button><button id="help-open" class="text-button">操作指南 <span>?</span></button><button id="sound-toggle" class="sound-button" aria-label="开启声音" aria-pressed="false"><span id="sound-icon">♪</span><i id="sound-state">OFF</i></button></nav>
+  </header>
+
+  <main class="stage" id="stage">
+    <canvas id="game" aria-label="神之殇横版跑酷游戏画面，使用空格跳跃，再次按下二段跳，向下键滑铲" tabindex="0"></canvas>
+    <div class="grain" aria-hidden="true"></div>
+    <div class="edge-shade" aria-hidden="true"></div>
+    <div class="frame-corner corner-tl" aria-hidden="true"></div><div class="frame-corner corner-br" aria-hidden="true"></div>
+
+    <section class="menu overlay" id="menu" aria-labelledby="game-title">
+      <div class="chapter-kicker"><span></span> THE LAST EMBER · 最后的余火</div>
+      <p class="overline">当诸神陨落，谁来埋葬黎明。</p>
+      <h1 id="game-title">神<span>之</span>殇</h1>
+      <div class="english-title">R E Q U I E M &nbsp; O F &nbsp; G O D S</div>
+      <p class="intro">众神已死，长夜未尽。<br>你是最后的送葬者。<br>带着一颗尚未熄灭的神之心，跑向世界尽头。</p>
+      <button id="start" class="primary-button"><span class="button-mark">✦</span> 踏入长夜 <span class="button-arrow">→</span></button>
+      <div class="chapter-picker" role="group" aria-label="选择关卡">
+        <button id="pick-prologue" class="chapter-chip selected" aria-pressed="true"><b>序章 · 灰烬之城</b><small>约 90 秒 · 携心换名</small></button>
+        <button id="pick-district" class="chapter-chip" aria-pressed="false"><b>第一幕 · 被遗忘者的国度</b><small>约 3 分钟行动 · 街区与记名桥</small></button>
+        <button id="pick-covenant" class="chapter-chip" aria-pressed="false"><b>第二幕 · 众神的谎言</b><small>约 3 分钟行动 · 三域与封门战</small></button>
+        <button id="pick-fate" class="chapter-chip" aria-pressed="false"><b>第三幕 · 弑日者</b><small>照忆穿桥 · 旧日真相 · 灰潮救人</small></button>
+        <button id="pick-dawn" class="chapter-chip" aria-pressed="false"><b>第四幕 · 最后的神谕</b><small>王城逃亡 · 引锤拆楔 · 安眠锁</small></button>
+        <button id="pick-finale" class="chapter-chip" aria-pressed="false"><b>第五幕 · 凡人的黎明</b><small>真门抉择 · 最终对决 · 三个结局</small></button>
+      </div>
+      <button id="story-entry" class="text-button intermission-entry">剧情纯享版 <small>分镜、对白与线索 · 不用跑图 →</small></button>
+      <button id="creator-entry" class="text-button intermission-entry creator-entry">创作者通道 <small>输入密码后编辑剧情，并同步主线 →</small></button>
+      <div class="boss-gate" aria-label="Boss 战通道">
+        <div><span class="boss-gate-mark">◇</span><div><b>Boss 战通道</b><small>追索军官 / 守门巨像 · 直接开战</small></div></div>
+        
+        <button id="boss-hub-open" class="gate-button">进入通道 <span>→</span></button>
+      </div>
+      <button id="continue-run" class="text-button hidden">从火祭碑继续 →</button><small id="save-note" class="save-note"></small><div class="menu-controls"><span><kbd>SPACE</kbd> 跳跃 / 二段跳</span><span><kbd>↓</kbd> 滑铲</span></div>
+      <p class="music-credit">♫ 原创配乐《葬火》 · 开始后奏响 · M 静音</p>
+      <div class="menu-footnote"><span id="menu-level-no">01</span><div><span id="menu-level-name">灰烬之城</span><small id="menu-level-en">THE CITY OF ASH</small></div><span class="footnote-rule"></span><em id="menu-level-note">约 90 秒 · 单人序章</em></div>
+    </section>
+    <div class="scene-label" id="scene-label" aria-hidden="true"><span>遗迹 / 001</span><strong>沉睡的并非群山。<br>而是神明。</strong><i>THE WORLD AFTER THE GODS</i></div>
+
+    <section id="intro-panel" class="intro-panel hidden" aria-labelledby="intro-title">
+      <div class="intro-top"><span id="story-heading">PROLOGUE / 光熄灭之后</span><button class="text-button" id="intro-skip">跳过序幕 →</button></div>
+      <div id="story-theater-nav" class="story-theater-nav hidden">
+        <div role="group" aria-label="剧情目录"><button id="story-pick-prologue" class="chapter-chip" aria-pressed="false">序章</button><button id="story-pick-district" class="chapter-chip" aria-pressed="false">第一幕</button><button id="intermission-entry" class="chapter-chip" aria-pressed="false">北岸幕间</button><button id="story-pick-covenant" class="chapter-chip" aria-pressed="false">第二幕</button><button id="story-pick-fate" class="chapter-chip" aria-pressed="false">第三幕</button><button id="story-pick-dawn" class="chapter-chip" aria-pressed="false">第四幕</button><button id="story-pick-finale" class="chapter-chip" aria-pressed="false">第五幕与结局</button></div>
+        <div class="creator-tools"><span id="creator-mode-label" class="hidden">创作者编辑中 · 保存后同步主线</span><button id="creator-exit" class="text-button hidden">退出编辑</button></div>
+        <label for="story-jump">跳到片段 <select id="story-jump"></select></label>
+      </div>
+      <section id="creator-editor" class="creator-editor hidden" aria-label="剧情文本编辑器">
+        <div class="creator-editor-heading"><span>当前片段文本</span><small id="creator-editor-key"></small></div>
+        <label>标题<input id="creator-title" type="text" autocomplete="off"></label>
+        <label>正文<textarea id="creator-body" rows="3"></textarea></label>
+        <label>引文 / 旁白<textarea id="creator-quote" rows="2"></textarea></label>
+        <div class="creator-editor-actions"><button id="creator-save" class="primary-button">保存并同步主线</button><button id="creator-reset" class="secondary-button">恢复默认</button><span id="creator-editor-status" role="status"></span></div>
+      </section>
+      <details id="creator-workbench" class="creator-editor hidden" aria-label="创作者工作台">
+        <summary>工作台 · 检索 / 备份 / 隔离试玩</summary><div class="creator-workbench-body">
+        <label>搜索标题 / 正文<input id="creator-search" type="search" placeholder="输入名字、词语或幕次"></label>
+        <label class="creator-inline"><input id="creator-edited-only" type="checkbox">只看已修改片段 <span id="creator-search-count"></span></label>
+        <label>搜索结果<select id="creator-results"></select></label>
+        <div class="creator-editor-actions"><button id="creator-undo" class="secondary-button">撤销上一次保存</button><button id="creator-export" class="secondary-button">导出备份</button><label class="creator-import-label">选择备份<input id="creator-import" type="file" accept=".json,application/json"></label><button id="creator-import-apply" class="secondary-button" disabled>应用导入</button></div><p id="creator-backup-status" role="status"></p>
+        <div class="creator-preview-controls"><label>试玩幕次<select id="creator-test-act"></select></label><label>检查点<select id="creator-test-cp"></select></label><button id="creator-test-go" class="secondary-button">从这里试玩</button></div>
+        <div class="creator-editor-actions"><button id="creator-ending-throne" class="secondary-button">查看余晖王座</button><button id="creator-ending-night" class="secondary-button">查看无神长夜</button><button id="creator-ending-embers" class="secondary-button">试玩最终对决</button></div>
+        </div></details>
+      <section id="creator-hearts" class="creator-editor hidden" aria-label="记忆碎片与四心参数">
+        <div class="creator-editor-heading"><span>记忆碎片 · 四心参数</span><small>改完立即生效，用于试玩不同收集率下的难度</small></div>
+        <label class="creator-inline">四心封顶
+          <input id="hearts-max" type="range" min="0" max="1" step="1" value="1">
+          <output id="hearts-max-out">开</output>
+        </label>
+        <label class="creator-inline">二心档位
+          <input id="hearts-t2" type="range" min="30" max="95" step="5" value="75">
+          <output id="hearts-t2-out">75%</output>
+        </label>
+        <label class="creator-inline">一心档位
+          <input id="hearts-t1" type="range" min="10" max="90" step="5" value="45">
+          <output id="hearts-t1-out">45%</output>
+        </label>
+        <p class="creator-hint">各幕按<b>碎片收集率</b>独立定档（一心/二心），进第四幕时累加换算成余火上限。
+          没达标也只是少一颗余火——<b>三心永远能通关</b>，心源是收集的奖励，不是门票。</p>
+        <div class="creator-editor-actions"><button id="hearts-apply" class="secondary-button">按当前收集率试算</button><span id="hearts-preview" role="status"></span></div>
+      </section>
+      <div class="intro-layout"><div id="story-art" class="story-art"></div><div class="story-copy"><p class="chapter-kicker" id="story-kicker"></p><h2 id="intro-title"></h2><p id="story-body"></p><blockquote id="story-quote"></blockquote><div class="story-controls"><button id="intro-prev" class="story-back" aria-label="上一幅">←</button><span id="story-page">01 / 04</span><button id="intro-next" class="primary-button">下一幕 →</button></div></div></div>
+      <div class="story-bottom"><div id="story-dots" aria-label="剧情进度"><i></i><i></i><i></i><i></i></div><span id="story-key-hint">SPACE / → 下一幅 · ESC 跳过</span><small>ORIGINAL SCORE · 葬火</small></div>
+    </section>
+    <section id="final-choice-panel" class="final-choice-panel hidden" aria-labelledby="final-choice-title"><p class="chapter-kicker">ACT V / THE LAST CHOICE</p><h2 id="final-choice-title">无名之门</h2><p>六锁已解。决定是否开门，以及如何处置神权。</p><div class="final-choices"><button id="choice-throne" class="final-choice"><b></b><span></span><em>选择这条路 →</em></button><button id="choice-night" class="final-choice"><b></b><span></span><em>选择这条路 →</em></button><button id="choice-embers" class="final-choice"><b></b><span></span><em>选择这条路 →</em></button></div><button id="choice-back" class="text-button">返回菜单</button></section>
+
+    <section id="encounter-panel" class="encounter-panel hidden" aria-labelledby="encounter-speaker">
+      <div class="encounter-heading"><span id="encounter-place"></span><button class="text-button" id="encounter-skip">略过对白 →</button></div>
+      <div class="encounter-layout"><div id="encounter-art" class="encounter-art"></div><div class="encounter-copy"><p class="chapter-kicker" id="encounter-role"></p><h2 id="encounter-speaker"></h2><blockquote id="encounter-line"></blockquote><p id="encounter-aside"></p><div class="encounter-actions"><span id="encounter-page"></span><button class="primary-button" id="encounter-next">听下去 →</button></div></div></div><small class="encounter-hint">SPACE / ENTER 继续 · ESC 暂停 · J 手记</small>
+    </section>
+    <section id="hud" class="hud hidden" aria-label="游戏状态">
+      <div class="hud-left"><div class="hud-caption">余火</div><div class="health" id="health"></div><div class="shard-count" aria-label="记忆碎片"><span>✧</span> <b id="shards">00</b></div><div class="plate-tracker hidden"><span>▣</span> <b id="plate-count">0 / 3</b><small>同行者</small></div></div>
+      <div class="hud-center"><div><b id="chapter-title">灰烬之城</b><small id="lock-progress" class="lock-progress hidden">神锁 0 / 6</small></div><div class="progress-track"><i id="progress"></i><span style="left:33%"></span><span style="left:66%"></span></div><p class="quest-line">◇ <span id="quest-label">携火离开灰城</span></p></div></div>
+      <button id="pause-button" class="icon-button" aria-label="暂停游戏">Ⅱ</button>
+      <!-- 第四幕专属：断楔提示条。玩家必须随时知道「E 现在能不能砍」，
+           否则断楔这个主动动作就只能靠撞墙去试。 -->
+    </section>
+    <button id="creator-preview-return" class="creator-preview-return hidden">返回创作者编辑</button>
+    <div id="strike-hint" class="strike-hint" hidden aria-live="polite"><b>←</b><span id="strike-hint-text">红圈锁定后后撤</span></div>
+
+    <div id="boss-guide" class="boss-guide hidden" role="status"></div>
+    <div id="chapter-banner" class="chapter-banner hidden"><span id="banner-subtitle"></span><h2 id="banner-title"></h2></div>
+    <div id="subtitle" class="subtitle hidden" role="status"></div>
+    <div id="tutorial" class="tutorial hidden"></div>
+    <div id="scene-caption" class="scene-caption hidden"><span id="scene-kicker"></span><h2 id="scene-title"></h2><p id="scene-line"></p><button id="scene-skip" class="text-button">跳过演出 ↵</button></div>
+    <aside id="memory-toast" class="memory-toast hidden" aria-label="新解锁的故事线索"><span id="memory-speaker"></span><p id="memory-line"></p><small>已写入旅途手记 · J 回看</small></aside>
+    <button id="journal-open" class="journal-button" aria-label="打开旅途手记">◇ <span>手记</span> <b id="journal-count">0</b> </button>
+    <div id="echo-status" class="echo-status hidden" role="status"></div>
+    <div id="ability" class="ability hidden"><span id="jump-one"></span><span id="jump-two"></span><small id="ability-label">双跃就绪</small></div>
+
+    <section class="modal-overlay hidden" id="pause-panel" aria-labelledby="pause-title"><div class="result-panel"><p class="chapter-kicker">A MOMENT IN THE ASH</p><h2 id="pause-title">长夜暂歇</h2><p>余火仍在等你。</p><button class="primary-button" id="resume">继续前行 <span>→</span></button><button class="secondary-button" id="restart-pause">重新开始</button><button class="text-button return-menu">返回主菜单</button></div></section>
+    <section class="modal-overlay hidden" id="death-panel" aria-labelledby="death-title"><div class="result-panel"><p class="chapter-kicker">EVEN ASH REMEMBERS</p><div class="result-symbol">✧</div><h2 id="death-title">余火未灭</h2><p>死亡不是终点。遗忘才是。</p><div class="result-stats"><div><b id="death-distance">0%</b><span>抵达路程</span></div><div><b id="death-shards">0</b><span>记忆碎片</span></div></div><button class="primary-button" id="retry">从火祭碑重生 <span>↻</span></button><button class="secondary-button" id="restart-death">重新开始</button><button class="text-button return-menu">返回主菜单</button></div></section>
+    <section class="modal-overlay hidden" id="win-panel" aria-labelledby="win-title"><div class="result-panel victory"><p class="chapter-kicker" id="win-kicker">PROLOGUE COMPLETE</p><div class="result-symbol">✦</div><h2 id="win-title">你带回了黎明的名字</h2><p id="win-description">神之心里传来的，不是神谕。<br>是一个孩子的哭声。</p><div class="result-stats"><div><b id="win-shards">0</b><span>记忆碎片</span></div><div><b id="win-time">0:00</b><span>穿越长夜</span></div><div><b id="win-deaths">0</b><span>重燃次数</span></div></div><p id="win-resonance" class="resonance-result"></p><p class="end-line" id="win-end-line">「别让他们……再成为神。」</p><button id="next-chapter" class="primary-button">走进失名街区 →</button><button class="secondary-button" id="replay">再入长夜 <span>↻</span></button><button class="secondary-button" id="ending-lore">翻阅世界档案 ↗</button><button class="text-button return-menu">返回主菜单</button><small class="demo-note" id="win-note">序章完 · 下一程：失名街区</small></div></section>
+
+    <div class="touch-controls hidden" id="touch-controls"><button id="touch-brake" class="hidden" aria-label="按住刹步，松开前进">←<span>按住刹步</span></button><button id="touch-echo" class="hidden" aria-label="按住照忆，松开收光">◇<span>按住照忆</span></button><button id="touch-dash" class="hidden" aria-label="逆火冲刺，消耗一枚余烬">»<span>逆火冲刺</span></button><button id="touch-slide" aria-label="滑铲">↓<span>滑铲</span></button><button id="touch-jump" aria-label="跳跃，再次点击二段跳">↑<span>跳跃 / 二段跳</span></button></div>
+    <div id="ember-meter" class="ember-meter hidden"><div><span>逆火余烬</span><b id="ember-count">0</b></div><small>按下 <kbd>Shift</kbd> 冲刺 · 消耗一枚</small></div>
+    <div id="warmth-meter" class="warmth-meter hidden"><div><span>携灯暖光</span><b id="warmth-time">去炭盆续火</b></div><div class="warmth-track"><i id="warmth-bar"></i></div><small>已点路灯 <b id="lamp-count">0 / 3</b></small></div>
+    <div id="battle-transition" class="battle-transition hidden" aria-label="余火入场过渡"><div class="entry-door left"></div><div class="entry-door right"></div><div class="entry-sigil"><i>◇</i><span>携火前行</span><small>THE EMBER AWAKENS</small></div></div>
+    <div id="live-announcement" class="sr-only" aria-live="polite"></div>
+    <div class="landscape-tip">横屏游玩，能更早看见前方的危险</div>
+  </main>
+  <footer class="bottom-bar"><div><span class="tiny-diamond">◆</span> 为逝去的神，走完最后一程。</div><div class="footer-controls"><span><kbd>SPACE</kbd> 跳跃 × 2</span><span><kbd>↓ / S</kbd> 滑铲</span><span><kbd>ESC</kbd> 暂停</span><span><kbd>M</kbd> 声音</span></div><span class="footer-right">DARK FANTASY / 2D RUNNER</span></footer>
+
+  <dialog id="lore-dialog" class="archive-dialog"><button class="dialog-close" aria-label="关闭世界档案">×</button><div class="archive-heading"><p class="chapter-kicker">THE ARCHIVE OF A FALLEN WORLD</p><h2>世界档案</h2><p>神之殇 · 创作蓝图</p></div><div class="archive-tabs" role="tablist" aria-label="档案分类"><button role="tab" aria-selected="true" aria-controls="lore-world" id="tab-world" data-tab="world">世界观</button><button role="tab" aria-selected="false" aria-controls="lore-story" id="tab-story" data-tab="story">旅途手记</button><button role="tab" aria-selected="false" aria-controls="lore-gameplay" id="tab-gameplay" data-tab="gameplay">玩法框架</button></div><article id="lore-world" class="archive-content" role="tabpanel" aria-labelledby="tab-world"></article><article id="lore-story" class="archive-content hidden" role="tabpanel" aria-labelledby="tab-story"></article><article id="lore-gameplay" class="archive-content hidden" role="tabpanel" aria-labelledby="tab-gameplay"></article><a class="doc-link" href="docs/design-bible.md" target="_blank" rel="noopener">创作与开发蓝图（含后续剧透）↗</a></dialog>
+  <dialog id="help-dialog" class="help-dialog"><button class="dialog-close" aria-label="关闭操作指南">×</button><p class="chapter-kicker">A GUIDE FOR THE LAST BEARER</p><h2>送葬者手记</h2><div class="help-row"><kbd>SPACE / W / ↑</kbd><div><b>跃起 · 再跃</b><p>地面跳跃后，再按一次发动二段跳。越过断桥，拾取高处碎片。</p></div></div><div class="help-row"><kbd>↓ / S</kbd><div><b>滑铲</b><p>在地面按下，短暂降低身姿，穿过悬垂的神骸。空中按下可快速落地并接滑铲。</p></div></div><div class="help-row"><kbd>ESC / P</kbd><div><b>暂停</b><p>离开窗口会自动暂停。按 M 切换声音。</p></div></div><div class="help-legend"><span><i class="legend-gold"></i>金色碎片 · 收集记忆</span><span><i class="legend-red"></i>赤色刻痕 · 危险障碍</span></div><p class="help-note">角色自动前行；三格余火耗尽后，可从最近火祭碑重来。触屏设备使用屏幕下方按钮。声音默认为关闭，开启后生成环境低鸣与动作音效。</p><button class="primary-button" id="help-done">铭记于心 <span>→</span></button></dialog>
+
+  <dialog id="boss-hub" class="boss-hub" aria-labelledby="boss-hub-title"><button class="dialog-close" aria-label="关闭 Boss 通道">×</button><p class="chapter-kicker">BOSS ARENAS</p><h2 id="boss-hub-title">Boss 战通道</h2><p class="boss-hub-note">选一场，直接开战。结束后可以立即重战。</p><div class="boss-choices"><button id="boss-entry" class="boss-choice"><small>第一幕 · 记名桥</small><b>追索军官</b><span>躲法术 · 敲钟破盾 · 跳接回火印</span><em>进入战斗 →</em></button><button id="boss-covenant-entry" class="boss-choice"><small>第二幕 · 三域封门</small><b>守门巨像</b><span>诱锤断链 · 跳刃与滑光幕 · 高震波</span><em>进入战斗 →</em></button><button id="boss-dawn-entry" class="boss-choice"><small>第四幕 · 胸腔之上</small><b>执炬王</b><span>推进躲招 · 引锤到楔前 · 锁定后后撤</span><em>进入战斗 →</em></button><button id="boss-final-entry" class="boss-choice"><small>第五幕 · 真门决战</small><b>执炬王 · 最终对决</b><span>左右走位 · 三段王权 · 接忆反击</span><em>进入战斗 →</em></button></div></dialog>
+  <dialog id="creator-gate" class="creator-gate" aria-labelledby="creator-gate-title"><button class="dialog-close" aria-label="关闭创作者通道">×</button><p class="chapter-kicker">CREATOR ACCESS</p><h2 id="creator-gate-title">创作者通道</h2><p>输入密码后编辑剧情纯享版。保存的文本会同步到主线对白、手记和幕末演出。</p><label for="creator-password">访问密码</label><input id="creator-password" type="password" inputmode="numeric" autocomplete="off" maxlength="32"><small id="creator-gate-status" role="status"></small><div class="creator-gate-actions"><button id="creator-enter" class="primary-button">进入编辑 →</button><button id="creator-cancel" class="text-button">返回</button></div></dialog>
+  <script type="module" src="src/main.js"></script>
+</body>
+</html>

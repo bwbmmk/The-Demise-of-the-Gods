@@ -1,0 +1,17 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8"><title>神之殇 · 场景与演出校验</title>
+<style>body{margin:0;padding:24px;background:#0b1118;color:#ddd5c4;font:14px system-ui}h1{font-size:24px;font-weight:400;letter-spacing:6px}small{color:#9b9f9e}section{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}canvas{display:block;width:100%;aspect-ratio:16/10;background:#182129}h2{font-size:17px;font-weight:400;letter-spacing:3px}button{background:#29343a;color:#e9d5a5;border:1px solid #68716c;padding:10px;margin:12px 8px 12px 0;cursor:pointer}#scene{width:min(100%,1050px);aspect-ratio:16/9}#status{margin:8px}p{color:#a6aca8}</style>
+<h1>神之殇 <small> / 序章 · 三境</small></h1><p>同一条送葬古道，从被遗忘的城市，穿过仍在索取的圣所，走向诸神的尸骸。</p>
+<section><article><h2>01 灰烬之城</h2><canvas id="city"></canvas><p>灰绿天穹 · 破败楼群 · 下落的灰烬</p></article><article><h2>02 无声圣所</h2><canvas id="temple"></canvas><p>深蓝高柱 · 残碎彩窗 · 静止的尘光</p></article><article><h2>03 神骸之桥</h2><canvas id="bone"></canvas><p>冷灰深渊 · 巨神肋骨 · 横掠的长风</p></article></section>
+<button data-scene="arrival">出场</button><button data-scene="defeat">战败</button><button data-scene="departure">入门</button><button id="pause">暂停演出</button><button id="middle">演出中点</button><button id="skip">跳过演出</button><button id="hp">切换生命</button><div id="status"></div><canvas id="scene"></canvas>
+<script type="module">
+import {Renderer} from '../src/renderer.js';import {Runner} from '../src/physics.js';import {Cinematic,SCENE_DURATIONS} from '../src/cinematics.js';import {groundAt,WORLD} from '../src/level.js';
+const views=['city','temple','bone'].map((id,i)=>{const r=new Renderer(document.getElementById(id)),p=new Runner();p.chapter=i;p.x=[2300,12900,22200][i];p.prevX=p.x;p.y=p.prevY=groundAt(p.x);return{r,p};});
+const r=new Renderer(document.getElementById('scene')),p=new Runner(),cine=new Cinematic();let paused=false,last=0;
+function start(type){p.chapter=type==='departure'?2:0;p.x=p.prevX=type==='departure'?WORLD.end:800;p.y=p.prevY=groundAt(p.x);cine.begin(type);paused=false;}
+for(const button of document.querySelectorAll('[data-scene]'))button.onclick=()=>start(button.dataset.scene);
+document.getElementById('pause').onclick=()=>paused=!paused;document.getElementById('skip').onclick=()=>cine.skip();document.getElementById('hp').onclick=()=>{cine.cancel();p.health=p.health%3+1;};
+document.getElementById('middle').onclick=()=>{if(cine.active){cine.time=SCENE_DURATIONS[cine.type]*.5;paused=true;}};
+start('arrival');
+new ResizeObserver(()=>{for(const v of views)v.r.resize();r.resize();}).observe(document.body);
+function frame(t){const dt=last?Math.min((t-last)/1000,.08):0;last=t;for(const v of views){v.p.elapsed+=dt;v.r.render(dt,v.p,'running');}if(!paused){if(cine.active)cine.update(dt);else p.elapsed+=dt;}r.render(paused?0:dt,p,'running',1,cine.sample());document.getElementById('status').textContent=`${cine.type||'生命火焰'} · ${cine.sample()?.q.toFixed(2)||p.health+'/3'} ${paused?'已暂停':''}`;requestAnimationFrame(frame);}requestAnimationFrame(frame);
+</script></html>

@@ -1,0 +1,16 @@
+{
+  "name": "requiem-of-gods",
+  "version": "0.15.1",
+  "private": true,
+  "description": "神之殇：序章、完整五幕与三结局的可玩初版",
+  "type": "module",
+  "scripts": {
+    "start": "node tools/serve.mjs",
+    "build": "node tools/build.mjs",
+    "music": "node tools/render-music.mjs",
+    "test": "node --test tests/*.test.mjs"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

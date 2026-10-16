@@ -1,0 +1,17 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8"><title>神之殇 · 音频接入校验</title>
+<style>body{background:#0b1319;color:#dac9a8;font:16px system-ui;padding:35px;line-height:2}h1{font-weight:400}button{background:#28343c;color:#e0cea8;border:1px solid #747a68;padding:12px;margin:10px;cursor:pointer}p{color:#a2afa6}</style>
+<h1>神之殇 · 音频接入校验</h1><p>这里使用正式 Soundscape 播放逻辑及编辑后的音频，只用于开发验证。</p>
+<button id="enable">开启声音</button><button id="journal">打开手记音乐</button><button id="close">关闭手记音乐</button>
+<button data-cue="transition">转场</button><button data-cue="resonance">共鸣</button><button data-cue="defeat">战败</button><button data-cue="victory">入门</button><button id="mute">关闭声音</button>
+<p id="status" role="status">等待操作</p><p id="buffers"></p>
+<script type="module">
+import {Soundscape} from '../src/audio.js';import {AUDIO_CLIPS} from '../src/audio-clips.js';
+const audio=new Soundscape(),status=document.getElementById('status');
+audio.onTrackChange=title=>status.textContent='当前配乐 · '+title;
+document.getElementById('enable').onclick=async()=>{await audio.setEnabled(true);audio.pause(false);};
+document.getElementById('journal').onclick=()=>audio.setJournal(true);
+document.getElementById('close').onclick=()=>audio.setJournal(false);
+document.getElementById('mute').onclick=()=>audio.setEnabled(false);
+for(const button of document.querySelectorAll('[data-cue]'))button.onclick=async()=>{audio.setJournal(false);await audio.playStinger(button.dataset.cue);status.textContent=AUDIO_CLIPS[button.dataset.cue].title;};
+setInterval(()=>{document.getElementById('buffers').textContent=`音频状态：${audio.ctx?.state||'未开启'} · 已请求 ${audio.clipCache.size} 段 · 正在播放 ${[...audio.clipNodes].filter(n=>!n.stopping).map(n=>AUDIO_CLIPS[n.id].title).join('、')||'无录音段'}`;},200);
+</script></html>

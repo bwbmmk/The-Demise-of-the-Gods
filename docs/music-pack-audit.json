@@ -1,0 +1,119 @@
+{
+  "scope": "Current Runner and the existing automated input policy; basic obstacles only",
+  "results": [
+    {
+      "id": "district",
+      "name": "失名街区",
+      "obstacles": 24,
+      "basicRoutePassed": false,
+      "firstIssue": {
+        "xBeforeDamage": 4598,
+        "yBeforeDamage": 900,
+        "events": [
+          {
+            "type": "hit",
+            "falling": true
+          },
+          {
+            "type": "respawn"
+          }
+        ]
+      }
+    },
+    {
+      "id": "lung",
+      "name": "风神之肺",
+      "obstacles": 23,
+      "basicRoutePassed": false,
+      "firstIssue": {
+        "xBeforeDamage": 3728,
+        "yBeforeDamage": 895,
+        "events": [
+          {
+            "type": "hit",
+            "falling": true
+          },
+          {
+            "type": "respawn"
+          }
+        ]
+      }
+    },
+    {
+      "id": "tide",
+      "name": "海神之血",
+      "obstacles": 23,
+      "basicRoutePassed": false,
+      "firstIssue": {
+        "xBeforeDamage": 4105,
+        "yBeforeDamage": 896,
+        "events": [
+          {
+            "type": "hit",
+            "falling": true
+          },
+          {
+            "type": "respawn"
+          }
+        ]
+      }
+    },
+    {
+      "id": "eye",
+      "name": "安眠神之眼",
+      "obstacles": 23,
+      "basicRoutePassed": false,
+      "firstIssue": {
+        "xBeforeDamage": 4226,
+        "yBeforeDamage": 893,
+        "events": [
+          {
+            "type": "hit",
+            "falling": true
+          },
+          {
+            "type": "respawn"
+          }
+        ]
+      }
+    },
+    {
+      "id": "loom",
+      "name": "命运神之手",
+      "obstacles": 23,
+      "basicRoutePassed": false,
+      "firstIssue": {
+        "xBeforeDamage": 4418,
+        "yBeforeDamage": 900,
+        "events": [
+          {
+            "type": "hit",
+            "falling": true
+          },
+          {
+            "type": "respawn"
+          }
+        ]
+      }
+    },
+    {
+      "id": "throne",
+      "name": "坠日王庭",
+      "obstacles": 22,
+      "basicRoutePassed": false,
+      "firstIssue": {
+        "xBeforeDamage": 4619,
+        "yBeforeDamage": 891,
+        "events": [
+          {
+            "type": "hit",
+            "falling": true
+          },
+          {
+            "type": "respawn"
+          }
+        ]
+      }
+    }
+  ]
+}
